@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+)
 
 type cpu struct {
 	opcode      uint16
@@ -57,11 +60,33 @@ func NewCpu() *cpu {
 	return c
 }
 
-func (c *cpu) load_program_to_memory() {
+func (c *cpu) load_program_to_memory(filePath string) error {
+	content, err := os.ReadFile(filePath)
 
+	if err != nil {
+		return fmt.Errorf("failed to read file: %w", err)
+	}
+
+	startProgramAddress := 0x200
+	for i, byteValue := range content {
+
+		if startProgramAddress+i < len(c.memory) {
+			c.memory[startProgramAddress+i] = byteValue
+		} else {
+			return fmt.Errorf("program size exceeds available memory")
+		}
+	}
+
+	return nil
 }
 
 func main() {
 	myCPU := NewCpu()
-	fmt.Printf("%+v\n", myCPU)
+	err := myCPU.load_program_to_memory("roms/test_opcode.ch8")
+
+	if err != nil {
+		fmt.Printf("failed to load program: %v\n", err)
+		return
+	}
+	fmt.Printf("%+v\n", myCPU.memory)
 }
