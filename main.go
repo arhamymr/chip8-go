@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+
+	"github.com/veandco/go-sdl2/sdl"
 )
 
 type cpu struct {
@@ -80,13 +82,87 @@ func (c *cpu) load_program_to_memory(filePath string) error {
 	return nil
 }
 
-func main() {
-	myCPU := NewCpu()
-	err := myCPU.load_program_to_memory("roms/test_opcode.ch8")
+type app struct {
+	window   *sdl.Window
+	renderer *sdl.Renderer
+	surface  *sdl.Surface
+	cpu      *cpu
+}
+
+func NewApp() *app {
+
+	if err := sdl.Init(sdl.INIT_EVERYTHING); err != nil {
+		panic(err)
+	}
+
+	const (
+		TITLE         = "CPU-8 GO PROJECT"
+		SCREEN_WIDTH  = 64
+		SCREEN_HEIGHT = 32
+		SCREEN_SCALE  = 10
+	)
+
+	window, err := sdl.CreateWindow(
+		TITLE,
+		sdl.WINDOWPOS_CENTERED,
+		sdl.WINDOWPOS_CENTERED,
+		SCREEN_WIDTH*SCREEN_SCALE,
+		SCREEN_HEIGHT*SCREEN_SCALE,
+		sdl.WINDOW_SHOWN,
+	)
+
+	renderer, err := sdl.CreateRenderer(window, -1, sdl.RENDERER_SOFTWARE|sdl.RENDERER_PRESENTVSYNC)
 
 	if err != nil {
-		fmt.Printf("failed to load program: %v\n", err)
-		return
+		panic(err)
 	}
-	fmt.Printf("%+v\n", myCPU.memory)
+
+	surface, err := window.GetSurface()
+
+	if err != nil {
+		panic(err)
+	}
+
+	cpu := NewCpu()
+	err = cpu.load_program_to_memory("roms/test_opcode.ch8")
+
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("%+v\n", cpu.memory)
+
+	return &app{
+		window,
+		renderer,
+		surface,
+		cpu,
+	}
+}
+
+func (a *app) main_loop() {
+	running := true
+	for running {
+		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+			switch event.(type) {
+			case *sdl.QuitEvent:
+				println("Quit")
+				running = false
+				break
+			}
+		}
+
+		sdl.Delay(33)
+	}
+}
+
+func main() {
+	app := NewApp()
+
+	app.surface.FillRect(nil, 0)
+	app.main_loop()
+
+	defer app.window.Destroy()
+	defer sdl.Quit()
+
 }
