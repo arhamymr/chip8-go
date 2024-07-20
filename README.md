@@ -7,5 +7,3 @@ Experimental emulator for the Chip-8 System, main goals for this project is to e
 Dependencies managed using homebrew:
 
 SDL2 (Simple Direct Media Layer)
-
-## Compile Command
